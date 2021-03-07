@@ -3,7 +3,7 @@
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*mode=scavenge*
-// @version     1.1
+// @version     1.2
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -650,6 +650,13 @@ $(document).ready(function() {
         table.width = '100%';
         table.id = 'bot_timers_table';
         return table;
+    }
+
+    function removeTimer(index) {
+        clearTimeout(timerTimeout);
+        timers.splice(index, 1);
+        saveTimers();
+        window.location.reload();
     }
 
     function createTimersUi() {
