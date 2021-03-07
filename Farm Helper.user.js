@@ -3,7 +3,7 @@
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*screen=am_farm*
-// @version     4.2
+// @version     4.3
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -148,7 +148,7 @@ $(document).ready(function() {
 
         // columns
         let columns = [
-            ['', 'Статус'],            
+            ['', 'Статус'],
             ['template', 'Шаблон', '<option value="a">A</option><option value="b">B</option>', 'a'],
             ['distance', 'Расстояние', '<option value="6">6</option><option value="12">12</option><option value="18">18</option><option value="36">36</option><option value="100">100</option>', '36']
         ];
@@ -206,8 +206,13 @@ $(document).ready(function() {
 
         btn = document.createElement('input');
         btn.className = 'btn';
-        btn.value = 'Запустить';
-        btn.addEventListener('click', activate, false);
+        if (!isEnabled()) {
+            btn.value = 'Запустить';
+            btn.addEventListener('click', activate, false);
+        } else {
+            btn.value = 'Остановить';
+            btn.addEventListener('click', deactivate, false);
+        }
         tdb.appendChild(btn);
 
         tr1.appendChild(tdb);
@@ -256,8 +261,10 @@ $(document).ready(function() {
 
         // disable controls
         for (let control in config.inputs) {
-            config.inputs[control].readOnly = true;
-            config.inputs[control].disabled = true;
+            if (control != 'start') {
+                config.inputs[control].readOnly = true;
+                config.inputs[control].disabled = true;
+            }
         }
     }
 
@@ -283,6 +290,11 @@ $(document).ready(function() {
         setStatus('Запусакется ...');
         enableSession();
         loadFirstTimer();
+    }
+
+    function deactivate() {
+        disableSession();
+        window.location.reload();
     }
 
     function startReportProcess(wait) {
@@ -559,6 +571,13 @@ $(document).ready(function() {
         return table;
     }
 
+    function removeTimer(index) {
+        clearTimeout(timerTimeout);
+        timers.splice(index, 1);
+        saveTimers();
+        window.location.reload();
+    }
+
     function createTimersUi() {
         console.log('Creating timers UI ...');
 
@@ -585,6 +604,10 @@ $(document).ready(function() {
             tr0.appendChild(th);
         }
 
+        let th = document.createElement('th');
+        th.innerHTML = '<img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/delete_small.png" title="" alt="" class="">';
+        tr0.appendChild(th);
+
         // add nodes
         for (let i = 0; i < timers.length; ++i) {
             let tr = document.createElement('tr');
@@ -608,6 +631,11 @@ $(document).ready(function() {
             date.setTime(timer.time);
             td.innerHTML = date.toLocaleTimeString();
             tr.appendChild(td);
+
+            td = document.createElement('td');
+            td.innerHTML = '<a class="" href="#"><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/delete_small.png" title="" alt="" class=""></a>';
+            tr.appendChild(td);
+            td.addEventListener('click', function() {removeTimer(i)}, false);
         }
     }
 

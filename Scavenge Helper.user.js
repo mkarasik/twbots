@@ -3,7 +3,7 @@
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*mode=scavenge*
-// @version     1.0
+// @version     1.1
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -197,8 +197,13 @@ $(document).ready(function() {
 
         btn = document.createElement('input');
         btn.className = 'btn';
-        btn.value = 'Запустить';
-        btn.addEventListener('click', activate, false);
+        if (!isEnabled()) {
+            btn.value = 'Запустить';
+            btn.addEventListener('click', activate, false);
+        } else {
+            btn.value = 'Остановить';
+            btn.addEventListener('click', deactivate, false);
+        }
         if (!config.sums || !config.sums[0]) {
             btn.disabled = true;
         }
@@ -366,8 +371,10 @@ $(document).ready(function() {
     function disablecontrols() {
         // disable controls
         for (let control in config.inputs) {
-            config.inputs[control].readOnly = true;
-            config.inputs[control].disabled = true;
+            if (control != 'start') {
+                config.inputs[control].readOnly = true;
+                config.inputs[control].disabled = true;
+            }
         }
     }
 
@@ -477,6 +484,11 @@ $(document).ready(function() {
         disablecontrols();
         enableSession();
         loadFirstTimer();
+    }
+
+    function deactivate() {
+        disableSession();
+        window.location.reload();
     }
 
     function timetoMilliSeconds(hours, minutes, seconds) {
@@ -666,6 +678,10 @@ $(document).ready(function() {
             tr0.appendChild(th);
         }
 
+        let th = document.createElement('th');
+        th.innerHTML = '<img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/delete_small.png" title="" alt="" class="">';
+        tr0.appendChild(th);
+
         // add nodes
         for (let i = 0; i < timers.length; ++i) {
             let tr = document.createElement('tr');
@@ -689,6 +705,11 @@ $(document).ready(function() {
             date.setTime(timer.time);
             td.innerHTML = date.toLocaleTimeString();
             tr.appendChild(td);
+
+            td = document.createElement('td');
+            td.innerHTML = '<a class="" href="#"><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/delete_small.png" title="" alt="" class=""></a>';
+            tr.appendChild(td);
+            td.addEventListener('click', function() {removeTimer(i)}, false);
         }
     }
 
