@@ -3,7 +3,7 @@
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*mode=scavenge*
-// @version     1.2
+// @version     1.3
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -245,7 +245,7 @@ $(document).ready(function() {
             let unit = {};
             unit.name = unitParams[i].name;
             unit.capacity = unitParams[i].capacity;
-            if (inputs && inputs[0].value.length > 0) {
+            if (inputs.length > 0 && inputs[0].value.length > 0) {
                 unit.num = parseInt(inputs[0].value);
             } else {
                 unit.num = 0;
@@ -394,7 +394,8 @@ $(document).ready(function() {
     }
 
     function buildRequestPart(num, groupUnits, sum) {
-        let hasArchers = (!!document.getElementsByName('archer'));
+        let archersInputs = document.getElementsByName('archer');
+        let hasArchers = (archersInputs && archersInputs.length > 0);
         let request = 'squad_requests%5B' + num + '%5D%5Bvillage_id%5D=' + config.q.village;
 
         let candidatePrefix = '&squad_requests%5B' + num + '%5D%5Bcandidate_squad%5D%5Bunit_counts%5D%5B';
