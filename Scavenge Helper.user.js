@@ -3,7 +3,7 @@
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*mode=scavenge*
-// @version     1.3
+// @version     1.4
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -396,9 +396,9 @@ $(document).ready(function() {
     function buildRequestPart(num, groupUnits, sum) {
         let archersInputs = document.getElementsByName('archer');
         let hasArchers = (archersInputs && archersInputs.length > 0);
-        let request = 'squad_requests%5B' + num + '%5D%5Bvillage_id%5D=' + config.q.village;
+        let request = 'squad_requests%5B' + 0 + '%5D%5Bvillage_id%5D=' + config.q.village;
 
-        let candidatePrefix = '&squad_requests%5B' + num + '%5D%5Bcandidate_squad%5D%5Bunit_counts%5D%5B';
+        let candidatePrefix = '&squad_requests%5B' + 0 + '%5D%5Bcandidate_squad%5D%5Bunit_counts%5D%5B';
 
         // add units
         for (let i = 0; i < groupUnits.length; ++i) {
@@ -410,9 +410,9 @@ $(document).ready(function() {
         // knight
         request += candidatePrefix + 'knight%5D=0';
         // add sum
-        request += '&squad_requests%5B' + num + '%5D%5Bcandidate_squad%5D%5Bcarry_max%5D=' + sum;
-        request += '&squad_requests%5B' + num + '%5D%5Boption_id%5D=' + (num + 1);
-        request += '&squad_requests%5B' + num + '%5D%5Buse_premium%5D=false';
+        request += '&squad_requests%5B' + 0 + '%5D%5Bcandidate_squad%5D%5Bcarry_max%5D=' + sum;
+        request += '&squad_requests%5B' + 0 + '%5D%5Boption_id%5D=' + (num + 1);
+        request += '&squad_requests%5B' + 0 + '%5D%5Buse_premium%5D=false';
 
         return request;
     }
@@ -431,42 +431,62 @@ $(document).ready(function() {
             }, 3000);
         } else {
             // build url
-            let data = '';
+            //let data = '';
+            //for (let i = 0; i < config.groups.length; ++i) {
+            //    data += buildRequestPart(i, config.groups[i], config.sums[i]) + '&';
+            //}
+            //data += 'h=' + config.q.h;
+
+            let data = [];
             for (let i = 0; i < config.groups.length; ++i) {
-                data += buildRequestPart(i, config.groups[i], config.sums[i]) + '&';
+                data.push(buildRequestPart(i, config.groups[i], config.sums[i]) + '&h=' + config.q.h);
             }
-            data += 'h=' + config.q.h;
 
             let url = 'https://' + window.location.hostname + '/game.php?' + ((config.q.t) ? 't=' + config.q.t + '&' : '') + 'village=' + config.q.village + '&screen=scavenge_api&ajaxaction=send_squads';
             console.log(url, data);
 
-            GM_xmlhttpRequest ( {
-                method:     'POST',
-                url:        url,
-                data:       data,
-                headers:    {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'TribalWars-Ajax': '1',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                onload: function (response) {
-                    console.log(response);
+            let count = 0;
 
-                    if (response.status == 200) {
-                        let resp = JSON.parse(response.response);
-                        console.log(resp);
+            for (let i = 0; i < data.length; ++i) {
+                let min = 2000;
+                let max = 5000;
+                let rand = Math.floor(Math.random() * (max - min + 1) + min);
 
-                        if (resp.bot_protect) {
-                            disableSession();
+                setTimeout(function() {
+                    GM_xmlhttpRequest ( {
+                        method:     'POST',
+                        url:        url,
+                        data:       data[i],
+                        headers:    {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'TribalWars-Ajax': '1',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        onload: function (response) {
+                            console.log(response);
+
+                            if (response.status == 200) {
+                                let resp = JSON.parse(response.response);
+                                console.log(resp);
+
+                                if (resp.bot_protect) {
+                                    disableSession();
+                                    // force reload now
+                                    count = 10;
+                                }
+                            } else {
+                                console.log(response);
+                            }
+                            count += 1;
+                            if (count >= data.length) {
+                                setTimeout(function() {
+                                    window.location.reload();
+                                }, 2000);
+                            }
                         }
-                    } else {
-                        console.log(response);
-                    }
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 2000);
-                }
-            } );
+                    });
+                }, rand);
+            }
         }
     }
 
