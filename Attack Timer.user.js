@@ -3,7 +3,7 @@
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*screen=place&try=confirm*
-// @version     1.2
+// @version     1.3
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js
 // @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js
 // @resource    jqUI_CSS  http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/base/jquery-ui.css
@@ -470,7 +470,7 @@ function startCountDownTimer(localDeparture) {
 function startSubmitTimer(localDeparture) {
     console.log('Submit Timer');
 
-    let attackInput = document.getElementsByName('submit')[0];
+    let attackInput = document.getElementsByName('submit_confirm')[0];
     let interval = localDeparture.getTime() - new Date().getTime() + attackClockScew;
 
     window.setTimeout(function() {
