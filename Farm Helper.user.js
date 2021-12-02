@@ -3,7 +3,7 @@
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*screen=am_farm*
-// @version     4.3
+// @version     4.4
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -276,7 +276,7 @@ $(document).ready(function() {
 
         readIndex();
 
-        config.currentTemplate = config[config.session.template];
+        config.currentTemplate = config[config.session.template];        
         config.wait = 25;
         config.distance = parseInt(config.session.distance);
 
@@ -374,6 +374,7 @@ $(document).ready(function() {
             let data = 'target=' + config.reports[config.currentIndex].target + '&template_id=' + config.currentTemplate.template_id + '&source=' + config.q.village + '&h=' + config.q.h;
             let url = 'https://' + window.location.hostname + '/game.php?' + ((config.q.t) ? 't=' + config.q.t + '&' : '') + 'village=' + config.q.village + '&screen=am_farm&mode=farm&ajaxaction=farm&json=1&=';
             console.log(url, data);
+            console.log(config.currentTemplate);
 
             GM_xmlhttpRequest ( {
                 method:     'POST',
@@ -445,8 +446,8 @@ $(document).ready(function() {
         config.q = readQuerryParams(String(elements[elements.length - 2]));
 
          // Read templates
-        config.a = readQuerryParams(document.forms[0].action);
-        config.b = readQuerryParams(document.forms[1].action);
+        config.a = readTemplate(document.getElementsByClassName('farm_icon_a'));
+        config.b = readTemplate(document.getElementsByClassName('farm_icon_b'));
 
         console.log('Params reading done.', config);
     }
@@ -464,6 +465,16 @@ $(document).ready(function() {
         return params;
     }
 
+    function readTemplate(elements) {
+        if (elements.length < 2) {
+            console.log('Template not found ', elements);
+        } else {
+            let element = elements[1];
+            console.log('Template found ', element.outerHTML.split(', ')[2].split(')')[0]);
+            return { 'template_id' : element.outerHTML.split(', ')[2].split(')')[0] };
+        }
+        return {};
+    }
 
     // timer
     // Bot Name, Village, url, time - Date().getTime();
