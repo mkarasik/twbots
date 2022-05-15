@@ -3,7 +3,8 @@
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*screen=am_farm*
-// @version     4.4
+// @include     *.tribalwars.net*screen=am_farm*
+// @version     4.5
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 

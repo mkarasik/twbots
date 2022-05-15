@@ -3,7 +3,8 @@
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*mode=scavenge*
-// @version     1.4
+// @include     *.tribalwars.net*mode=scavenge*
+// @version     1.5
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -380,8 +381,8 @@ $(document).ready(function() {
 
     function waitAndReload(reason) {
         // don't wait too long for page 3 - 5 sec
-        let min = 22 * 60000;
-        let max = 28 * 60000;
+        let min = 5 * 60000;
+        let max = 12 * 60000;
 
         let rand = Math.floor(Math.random() * (max - min + 1) + min);
 
@@ -496,11 +497,6 @@ $(document).ready(function() {
     }
 
     function activate() {
-        if (config.time > 0) {
-            alert('Невозможно до оконачания сборов');
-            return;
-        }
-
         console.log('Activating');
         disablecontrols();
         enableSession();
