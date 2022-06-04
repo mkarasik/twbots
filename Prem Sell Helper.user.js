@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*market&mode=exchange*
 // @include     *.tribalwars.net*market&mode=exchange*
-// @version     0.3
+// @version     0.4
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -13,7 +13,7 @@ $(document).ready(function() {
 
     let scriptInitials = 'PS';
     let scriptFriendlyName = 'Прем Бот';
-
+    let scriptTimerColor = '#D876C4';
     let config = {};
 
     readScreenParams();
@@ -451,6 +451,7 @@ $(document).ready(function() {
         let newTimer = {
             name: scriptFriendlyName,
             village: document.getElementsByClassName('village')[0].nextSibling.data,
+            color: scriptTimerColor,
             reason: reason,
             url: url,
             time: new Date().getTime() + time
@@ -558,24 +559,29 @@ $(document).ready(function() {
             let timer = timers[i];
             let td = document.createElement('td');
             td.innerHTML = timer.name;
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
 
             td = document.createElement('td');
             td.innerHTML = timer.village;
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
 
             td = document.createElement('td');
             td.innerHTML = timer.reason;
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
 
             td = document.createElement('td');
             let date = new Date();
             date.setTime(timer.time);
             td.innerHTML = date.toLocaleTimeString();
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
 
             td = document.createElement('td');
             td.innerHTML = '<a class="" href="#"><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/delete_small.png" title="" alt="" class=""></a>';
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
             td.addEventListener('click', function() {removeTimer(i)}, false);
         }

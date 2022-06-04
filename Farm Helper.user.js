@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*screen=am_farm*
 // @include     *.tribalwars.net*screen=am_farm*
-// @version     4.5
+// @version     4.6
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -12,6 +12,7 @@ $(document).ready(function() {
 
     let scriptInitials = 'FH';
     let scriptFriendlyName = 'Фарм Бот';
+    let scriptTimerColor = '#B5D278';
 
     let config = {};
 
@@ -277,7 +278,7 @@ $(document).ready(function() {
 
         readIndex();
 
-        config.currentTemplate = config[config.session.template];        
+        config.currentTemplate = config[config.session.template]; 
         config.wait = 25;
         config.distance = parseInt(config.session.distance);
 
@@ -521,6 +522,7 @@ $(document).ready(function() {
         let newTimer = {
             name: scriptFriendlyName,
             village: document.getElementsByClassName('village')[0].nextSibling.data,
+            color: scriptTimerColor,
             reason: reason,
             url: url,
             time: new Date().getTime() + time
@@ -628,24 +630,29 @@ $(document).ready(function() {
             let timer = timers[i];
             let td = document.createElement('td');
             td.innerHTML = timer.name;
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
 
             td = document.createElement('td');
             td.innerHTML = timer.village;
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
 
             td = document.createElement('td');
             td.innerHTML = timer.reason;
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
 
             td = document.createElement('td');
             let date = new Date();
             date.setTime(timer.time);
             td.innerHTML = date.toLocaleTimeString();
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
 
             td = document.createElement('td');
             td.innerHTML = '<a class="" href="#"><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/delete_small.png" title="" alt="" class=""></a>';
+            if (timer.color) { td.style = 'background-color: ' + timer.color; }
             tr.appendChild(td);
             td.addEventListener('click', function() {removeTimer(i)}, false);
         }
