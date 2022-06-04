@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*market&mode=exchange*
 // @include     *.tribalwars.net*market&mode=exchange*
-// @version     0.0
+// @version     0.1
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -344,39 +344,40 @@ $(document).ready(function() {
         let max = 0;
         let resource = -1;
         for (let i = 0; i < 3; i++) {
-            let gain = parseInt(0.8 * resources[i] / prices[i]);
+            let gain = parseInt(resources[i] / prices[i]);
+            console.log('gain', resources[i], prices[i], gain)
             if (gain > max) {
                 max = gain;
                 resource = i;
             }
         }
-        console.log(max, resource);
+        console.log('max', max, resource);
 
-        if (resource == -1 || max < prices[resource]) {
+        if (resource == -1 || max == 0) {
             waitAndReload('Nothing to sell', 30 * 60000, 45 * 60000);
         } else {
             let resNames = ['Wood', 'Stone', 'Iron'];
             setStatus('Selling ' + resNames[resource] + '...');
-        }
 
-        let inputNames = ['sell_wood', 'sell_stone', 'sell_iron'];
-        document.getElementsByName(inputNames[resource])[0].value = resources[resource] - prices[resource];
+            let inputNames = ['sell_wood', 'sell_stone', 'sell_iron'];
+            document.getElementsByName(inputNames[resource])[0].value = resources[resource] - prices[resource];
 
-        let calculate = document.getElementsByClassName('btn-premium-exchange-buy')[0];
-        let rand = Math.floor(Math.random() * (7000 - 4000 + 1) + 4000);
-
-        window.setTimeout(function() {
-            calculate.click();
+            let calculate = document.getElementsByClassName('btn-premium-exchange-buy')[0];
+            let rand = Math.floor(Math.random() * (7000 - 4000 + 1) + 4000);
 
             window.setTimeout(function() {
-                let confirm = document.getElementsByClassName('btn-confirm-yes')[0];
-                confirm.click();
-                // stays on the same page, try more in 15 - 20 seconds
+                calculate.click();
+
                 window.setTimeout(function() {
-                    waitAndReload('Trying more', 15000, 20000);
+                    let confirm = document.getElementsByClassName('btn-confirm-yes')[0];
+                    confirm.click();
+                    // stays on the same page, try more in 15 - 20 seconds
+                    window.setTimeout(function() {
+                        waitAndReload('Trying more', 15000, 20000);
+                    }, rand);
                 }, rand);
             }, rand);
-        }, rand);
+        }
     }
 
     function setStatus(status) {
