@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*market&mode=exchange*
 // @include     *.tribalwars.net*market&mode=exchange*
-// @version     0.1
+// @version     0.2
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -353,7 +353,7 @@ $(document).ready(function() {
         }
         console.log('max', max, resource);
 
-        if (resource == -1 || max == 0) {
+        if (resource == -1 || max < 2) {
             waitAndReload('Nothing to sell', 30 * 60000, 45 * 60000);
         } else {
             let resNames = ['Wood', 'Stone', 'Iron'];
