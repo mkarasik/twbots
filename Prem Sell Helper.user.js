@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*market&mode=exchange*
 // @include     *.tribalwars.net*market&mode=exchange*
-// @version     0.2
+// @version     0.3
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -356,7 +356,7 @@ $(document).ready(function() {
         if (resource == -1 || max < 2) {
             waitAndReload('Nothing to sell', 30 * 60000, 45 * 60000);
         } else {
-            let resNames = ['Wood', 'Stone', 'Iron'];
+            let resNames = ['wood', 'clay', 'iron'];
             setStatus('Selling ' + resNames[resource] + '...');
 
             let inputNames = ['sell_wood', 'sell_stone', 'sell_iron'];
