@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*market&mode=exchange*
 // @include     *.tribalwars.net*market&mode=exchange*
-// @version     0.4
+// @version     0.5
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -15,6 +15,8 @@ $(document).ready(function() {
     let scriptFriendlyName = 'Прем Бот';
     let scriptTimerColor = '#D876C4';
     let config = {};
+
+    const maxRate = 850;
 
     readScreenParams();
     readSessionConfig();
@@ -256,6 +258,7 @@ $(document).ready(function() {
                 config.inputs[control].disabled = true;
             }
         }
+        document.getElementsByClassName('btn-premium-exchange-buy')[0].style.display = 'none';
     }
 
     function start() {
@@ -320,6 +323,12 @@ $(document).ready(function() {
         prices.push(parseInt(document.getElementById('premium_exchange_rate_iron').innerText.split(' ')[1]));
         console.log(prices);
 
+        for (let i = 0; i < 3; i++) {
+            if (prices[i] >= maxRate) {
+                prices[i] = 100000;
+            }
+        }
+
         // find current resources amount
         let capacity = parseInt(document.getElementById('market_merchant_available_count').innerHTML) * 1000;
 
@@ -360,7 +369,7 @@ $(document).ready(function() {
             setStatus('Selling ' + resNames[resource] + '...');
 
             let inputNames = ['sell_wood', 'sell_stone', 'sell_iron'];
-            document.getElementsByName(inputNames[resource])[0].value = resources[resource] - prices[resource];
+            document.getElementsByName(inputNames[resource])[0].value = ((resources[resource] - prices[resource]) / 100).toFixed() * 100;
 
             let calculate = document.getElementsByClassName('btn-premium-exchange-buy')[0];
             let rand = Math.floor(Math.random() * (7000 - 4000 + 1) + 4000);

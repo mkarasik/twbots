@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*mode=scavenge*
 // @include     *.tribalwars.net*mode=scavenge*
-// @version     1.6
+// @version     2.1
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -16,13 +16,13 @@ $(document).ready(function() {
     let config = {};
 
     let unitParams = [
-        {'name': 'spear', 'capacity': 25},
-        {'name': 'sword', 'capacity': 15},
-        {'name': 'axe', 'capacity': 10},
-        {'name': 'archer', 'capacity': 10},
-        {'name': 'light', 'capacity': 80},
-        {'name': 'marcher', 'capacity': 50},
-        {'name': 'heavy', 'capacity': 50}
+        {'name': 'spear',   'capacity': 25, 'villagers': 1},
+        {'name': 'sword',   'capacity': 15, 'villagers': 1},
+        {'name': 'axe',     'capacity': 10, 'villagers': 1},
+        {'name': 'archer',  'capacity': 10, 'villagers': 1},
+        {'name': 'light',   'capacity': 80, 'villagers': 4},
+        {'name': 'marcher', 'capacity': 50, 'villagers': 5},
+        {'name': 'heavy',   'capacity': 50, 'villagers': 6}
     ];
 
     readScreenParams();
@@ -70,7 +70,9 @@ $(document).ready(function() {
             config.groups = JSON.parse(config.session.groups);
             config.sums = JSON.parse(config.session.sums);
         }
-
+        if (config.session.select) {
+            config.select = JSON.parse(config.session.select);
+        }
         console.log('Session config read', config.session);
     }
 
@@ -88,9 +90,19 @@ $(document).ready(function() {
             }
         }
 
-        // save groups and sums
-        sessionStorage.setItem(prefix + 'groups', JSON.stringify(config.groups));
-        sessionStorage.setItem(prefix + 'sums', JSON.stringify(config.sums));
+        // save autoselect controls
+        config.select = [];
+        for (let i = 0; i < config.autoInputs.length; ++i) {
+            const select = config.autoInputs[i];
+            const selValue = select.options[select.selectedIndex].value;
+
+            if (selValue === 'manual') {
+                config.select.push(config.units[i].read);
+            } else {
+                config.select.push(selValue);
+            }
+        }
+        sessionStorage.setItem(prefix + 'select', JSON.stringify(config.select));
 
         console.log('Session config saved');
     }
@@ -132,7 +144,7 @@ $(document).ready(function() {
         elements[0].after(controlsDiv);
 
         let h = document.createElement('h4');
-        h.innerHTML = 'Фарм Бот';
+        h.innerHTML = scriptFriendlyName;
         controlsDiv.appendChild(h);
 
         let innerDiv = document.createElement('div');
@@ -150,16 +162,46 @@ $(document).ready(function() {
         tr0.innerHTML = '<th><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/unit/unit_spear.png"></th><th><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/unit/unit_sword.png"></th><th><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/unit/unit_axe.png"></th><th><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/unit/unit_archer.png"></th><th><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/unit/unit_light.png"></th><th><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/unit/unit_marcher.png"></th><th><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/unit/unit_heavy.png"></th><th><span class="icon header res"></span></th>';
         body.appendChild(tr0);
 
+        // auto refill inputs
+        config.autoInputs=[];
+        let tr1 = document.createElement('tr');
+        body.appendChild(tr1);
+
+        for (let i = 0; i < 8; ++i) {
+            let td = document.createElement('td');
+            if (i != 7) {
+                let select = document.createElement('select');
+                select.innerHTML = '<option value="manual">---</option><option value="all">Все</option><option value="-100">-100</option><option value="-200">-200</option>';
+
+                if (config.select && (select.innerHTML.indexOf('value="' + config.select[i] + '"') > -1)) {
+                    select.value = config.select[i];
+                } else if (config.select && (typeof config.select[i] === 'number')) {
+                    select.value = 'manual';
+                } else {
+                    // set spears, swords, and axes to all
+                    if (i < 3) {
+                        select.value = 'all';
+                    } else {
+                        select.value = 'manual';
+                    }
+                }
+                td.appendChild(select);
+                config.autoInputs.push(select);
+            }
+            tr1.appendChild(td);
+        }
+
+        // groups inputs
         config.groupInputs=[];
         for (let j = 0; j < 4; ++j) {
             let units = [];
-            let tr1 = document.createElement('tr');
-            body.appendChild(tr1);
+            let tr2 = document.createElement('tr');
+            body.appendChild(tr2);
 
             for (let i = 0; i < 8; ++i) {
                 let td = document.createElement('td');
                 td.innerHTML = '0';
-                tr1.appendChild(td);
+                tr2.appendChild(td);
                 units.push(td);
             }
             config.groupInputs.push(units);
@@ -205,10 +247,7 @@ $(document).ready(function() {
         } else {
             btn.value = 'Остановить';
             btn.addEventListener('click', deactivate, false);
-        }
-        if (!config.sums || !config.sums[0]) {
-            btn.disabled = true;
-        }
+        }        
         tdb.appendChild(btn);
 
         tr0.appendChild(tdb);
@@ -239,20 +278,50 @@ $(document).ready(function() {
         }
     }
 
+    function readAvailability() {
+        // read values and availability
+
+        config.available = [];
+        for (let i = 0; i < unitParams.length; ++i) {
+            let inputs = document.getElementsByName(unitParams[i].name);
+            if (inputs.length > 0) {
+                let available = parseInt(inputs[0].nextSibling.innerHTML.replace(/[{()}]/g, ''));
+                config.available.push(available);
+            }
+        }
+        console.log('Available units', config.available);
+    }
 
     function readUnits() {
+        console.log('Reading units');
         config.units = [];
         for (let i = 0; i < unitParams.length; ++i) {
             let inputs = document.getElementsByName(unitParams[i].name);
             let unit = {};
             unit.name = unitParams[i].name;
             unit.capacity = unitParams[i].capacity;
-            if (inputs.length > 0 && inputs[0].value.length > 0) {
-                unit.num = parseInt(inputs[0].value);
+
+            const select = config.autoInputs[i];
+            const selValue = select.options[select.selectedIndex].value;
+
+            if (selValue === 'all') {
+                unit.num = config.available[i];
+            } else if (selValue === '-100') {
+                unit.num = Math.max(0, config.available[i] - 100);
+            } else if (selValue === '-200') {
+                unit.num = Math.max(0, config.available[i] - 200);
             } else {
-                unit.num = 0;
+                if (inputs.length > 0 && inputs[0].value.length > 0) {
+                    unit.num = parseInt(inputs[0].value);
+                } else if (config.select && typeof config.select[i] === 'number') {
+                    unit.num = config.select[i];
+                } else {
+                    unit.num = 0;
+                }
             }
+            unit.read = unit.num;
             config.units.push(unit);
+            console.log('Units read', unit.name, unit.num);
         }
     }
 
@@ -348,21 +417,38 @@ $(document).ready(function() {
     }
 
     function setControls() {
-        for (let i = 0; i < config.groups.length; ++i) {
-            for (let j = 0; j < config.groups[i].length; ++j) {
-                config.groupInputs[i][j].innerHTML = config.groups[i][j].num;
+        if (config.groups) {
+            for (let i = 0; i < config.groups.length; ++i) {
+                for (let j = 0; j < config.groups[i].length; ++j) {
+                    config.groupInputs[i][j].innerHTML = config.groups[i][j].num;
+                }
+                config.groupInputs[i][7].innerHTML = config.sums[i];
             }
-            config.groupInputs[i][7].innerHTML = config.sums[i];
         }
     }
 
+    function recalcualteUnits() {
+        do {
+            readUnits();
+            calculateGroups();
+
+            // calculate number of units in the last group, must be 10
+            let villagers = 0;
+            for (let j = 0; j < config.groups[config.n - 1].length; ++j) {
+                villagers += config.groups[config.n - 1][j].num * unitParams[j].villagers;
+            }
+            console.log('villagers', villagers);
+            if (villagers >= 10) {
+                // the last group has enough villagers
+                break;
+            }
+            // recalculate to the lowest number of groups
+            config.n -= 1;
+        } while(config.n > 0);
+    }
+
     function saveSelection() {
-        if (config.time > 0) {
-            alert('Невозможно до оконачания сборов');
-            return;
-        }
         readUnits();
-        calculateGroups();
         setControls();
         saveSessionConfig();
         // add vilalge to timers list with no delay
@@ -377,6 +463,10 @@ $(document).ready(function() {
                 config.inputs[control].readOnly = true;
                 config.inputs[control].disabled = true;
             }
+        }
+        for (let control in config.autoInputs) {
+            config.autoInputs[control].readOnly = true;
+            config.autoInputs[control].disabled = true;
         }
     }
 
@@ -409,8 +499,11 @@ $(document).ready(function() {
             }
             request += candidatePrefix + groupUnits[i].name + '%5D=' + groupUnits[i].num;
         }
+
         // knight
-        request += candidatePrefix + 'knight%5D=0';
+        if (document.getElementsByName('archer').length > 0) {
+            request += candidatePrefix + 'knight%5D=0';
+        }
         // add sum
         request += '&squad_requests%5B' + 0 + '%5D%5Bcandidate_squad%5D%5Bcarry_max%5D=' + sum;
         request += '&squad_requests%5B' + 0 + '%5D%5Boption_id%5D=' + (num + 1);
@@ -423,7 +516,7 @@ $(document).ready(function() {
         // Started
         console.log('Started');
         disablecontrols();
-        document.getElementsByClassName('candidate-squad-container')[0].remove();
+        document.getElementsByClassName('candidate-squad-container')[0].style.display = 'none';
 
         if (config.time > 0) {
             // wait for timers to complete + 25 min
@@ -432,20 +525,26 @@ $(document).ready(function() {
                 waitAndReload('Сбор в процессе');
             }, 3000);
         } else {
-            // build url
-            //let data = '';
-            //for (let i = 0; i < config.groups.length; ++i) {
-            //    data += buildRequestPart(i, config.groups[i], config.sums[i]) + '&';
-            //}
-            //data += 'h=' + config.q.h;
+            const groups = config.n;
+
+            recalcualteUnits();
+
+            if (config.n == 0) {
+                console.log('Not enough units');
+                return;
+            }
+
+            setControls();
 
             let data = [];
+            // send troops from the end, to gain more resources
+            let offset = config.n - config.groups.length;
             for (let i = 0; i < config.groups.length; ++i) {
-                data.push(buildRequestPart(i, config.groups[i], config.sums[i]) + '&h=' + config.q.h);
+                data.push(buildRequestPart(i + offset, config.groups[i], config.sums[i]) + '&h=' + config.q.h);
             }
 
             let url = 'https://' + window.location.hostname + '/game.php?' + ((config.q.t) ? 't=' + config.q.t + '&' : '') + 'village=' + config.q.village + '&screen=scavenge_api&ajaxaction=send_squads';
-            console.log(url, data);
+            console.log(url, decodeURI(data));
 
             let count = 0;
 
@@ -547,6 +646,10 @@ $(document).ready(function() {
             }
             console.log('Number opened places', config.n);
         }
+
+        // find available units
+        readAvailability();
+
         console.log('Params reading done.', config);
     }
 
