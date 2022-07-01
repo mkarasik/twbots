@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*mode=scavenge*
 // @include     *.tribalwars.net*mode=scavenge*
-// @version     2.1
+// @version     2.2
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -191,22 +191,6 @@ $(document).ready(function() {
             tr1.appendChild(td);
         }
 
-        // groups inputs
-        config.groupInputs=[];
-        for (let j = 0; j < 4; ++j) {
-            let units = [];
-            let tr2 = document.createElement('tr');
-            body.appendChild(tr2);
-
-            for (let i = 0; i < 8; ++i) {
-                let td = document.createElement('td');
-                td.innerHTML = '0';
-                tr2.appendChild(td);
-                units.push(td);
-            }
-            config.groupInputs.push(units);
-        }
-
         // add buttons
         let btntable = document.createElement('table');
         btntable.className = 'vis';
@@ -273,9 +257,6 @@ $(document).ready(function() {
         timersDiv.appendChild(createTimersTable());
 
         console.log('Adding units', config.groups);
-        if (config.groups) {
-            setControls();
-        }
     }
 
     function readAvailability() {
@@ -416,17 +397,6 @@ $(document).ready(function() {
         console.log(config.sums, config.groups);
     }
 
-    function setControls() {
-        if (config.groups) {
-            for (let i = 0; i < config.groups.length; ++i) {
-                for (let j = 0; j < config.groups[i].length; ++j) {
-                    config.groupInputs[i][j].innerHTML = config.groups[i][j].num;
-                }
-                config.groupInputs[i][7].innerHTML = config.sums[i];
-            }
-        }
-    }
-
     function recalcualteUnits() {
         do {
             readUnits();
@@ -449,7 +419,6 @@ $(document).ready(function() {
 
     function saveSelection() {
         readUnits();
-        setControls();
         saveSessionConfig();
         // add vilalge to timers list with no delay
         addTimer('Готовность к запуску', pageUrl(), 0, true);
@@ -525,8 +494,6 @@ $(document).ready(function() {
                 waitAndReload('Сбор в процессе');
             }, 3000);
         } else {
-            const groups = config.n;
-
             recalcualteUnits();
 
             if (config.n == 0) {
@@ -534,11 +501,10 @@ $(document).ready(function() {
                 return;
             }
 
-            setControls();
-
             let data = [];
+            // troops could be recalculated due to luck of units, so send them from the end
             // send troops from the end, to gain more resources
-            let offset = config.n - config.groups.length;
+            let offset = config.original - config.groups.length;
             for (let i = 0; i < config.groups.length; ++i) {
                 data.push(buildRequestPart(i + offset, config.groups[i], config.sums[i]) + '&h=' + config.q.h);
             }
@@ -644,6 +610,7 @@ $(document).ready(function() {
                     break;
                 }
             }
+            config.original = config.n;
             console.log('Number opened places', config.n);
         }
 
