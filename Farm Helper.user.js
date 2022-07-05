@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*screen=am_farm*
 // @include     *.tribalwars.net*screen=am_farm*
-// @version     4.6
+// @version     4.9
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -332,6 +332,10 @@ $(document).ready(function() {
 
         let rand = Math.floor(Math.random() * (max - min + 1) + min);
 
+        console.log('Wait and reload', reason, page);
+        if (page == undefined) {
+            page = getPage();
+        }
         let url = pageUrl(page);
 
         // add to timers list
@@ -340,7 +344,7 @@ $(document).ready(function() {
         loadFirstTimer();
     }
 
-    function getNextPage() {
+    function getPage() {
         let page;
         let q = readQuerryParams(window.location.href);
         if (!q.Farm_page) {
@@ -350,6 +354,12 @@ $(document).ready(function() {
         }
 
         console.log('current page', page);
+
+        return page;
+    }
+
+    function getNextPage() {
+        let page = getPage();
         let numPages = document.getElementsByClassName('paged-nav-item').length / 2;
         if (++page >= numPages) {
             page = 0;
@@ -629,8 +639,11 @@ $(document).ready(function() {
 
             let timer = timers[i];
             let td = document.createElement('td');
-            td.innerHTML = timer.name;
             if (timer.color) { td.style = 'background-color: ' + timer.color; }
+            let href = document.createElement('a');
+            href.setAttribute('href', timer.url);
+            href.innerHTML = timer.name;
+            td.appendChild(href);
             tr.appendChild(td);
 
             td = document.createElement('td');

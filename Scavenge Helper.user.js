@@ -4,7 +4,7 @@
 // @namespace   https://*.voyna-plemyon.ru
 // @include     *.voyna-plemyon.ru*mode=scavenge*
 // @include     *.tribalwars.net*mode=scavenge*
-// @version     2.2
+// @version     2.3
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -785,8 +785,11 @@ $(document).ready(function() {
 
             let timer = timers[i];
             let td = document.createElement('td');
-            td.innerHTML = timer.name;
             if (timer.color) { td.style = 'background-color: ' + timer.color; }
+            let href = document.createElement('a');
+            href.setAttribute('href', timer.url);
+            href.innerHTML = timer.name;
+            td.appendChild(href);
             tr.appendChild(td);
 
             td = document.createElement('td');
