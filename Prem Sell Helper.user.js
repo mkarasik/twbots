@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name     Prem Sell Helper
 // @namespace   https://*.tribalwars.net
-// @namespace   https://*.voyna-plemyon.ru
-// @include     *.voyna-plemyon.ru*market&mode=exchange*
+// @namespace   https://*.voynaplemyon.com
+// @include     *.voynaplemyon.com*market&mode=exchange*
 // @include     *.tribalwars.net*market&mode=exchange*
-// @version     0.6
+// @version     0.7
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 

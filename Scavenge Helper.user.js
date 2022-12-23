@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name     Scavenge Helper
 // @namespace   https://*.tribalwars.net
-// @namespace   https://*.voyna-plemyon.ru
-// @include     *.voyna-plemyon.ru*mode=scavenge*
+// @namespace   https://*.voynaplemyon.com
+// @include     *.voynaplemyon.com*mode=scavenge*
 // @include     *.tribalwars.net*mode=scavenge*
-// @version     2.3
+// @version     2.6
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -25,15 +25,18 @@ $(document).ready(function() {
         {'name': 'heavy',   'capacity': 50, 'villagers': 6}
     ];
 
-    readScreenParams();
-    readSessionConfig();
-    readSessionState();
-    createControls();
+    setTimeout(function() {
+        readScreenParams();
+        readSessionConfig();
+        readSessionState();
+        createControls();
 
-    // start loot if enabled
-    if (isEnabled()) {
-        startLoot();
-    }
+        // start loot if enabled
+        if (isEnabled()) {
+            startLoot();
+        }
+        readTimers();
+    }, 2000);
 
     function scriptVillageName() {
         return scriptInitials + '.' + config.q.village;
@@ -178,8 +181,10 @@ $(document).ready(function() {
                 } else if (config.select && (typeof config.select[i] === 'number')) {
                     select.value = 'manual';
                 } else {
-                    // set spears, swords, and axes to all
-                    if (i < 3) {
+                    // set spears, swords, and axes
+                    if (i < 2) {
+                        select.value = '-200';
+                    } else if (i < 3) {
                         select.value = 'all';
                     } else {
                         select.value = 'manual';
@@ -231,7 +236,7 @@ $(document).ready(function() {
         } else {
             btn.value = 'Остановить';
             btn.addEventListener('click', deactivate, false);
-        }        
+        }
         tdb.appendChild(btn);
 
         tr0.appendChild(tdb);
@@ -268,6 +273,8 @@ $(document).ready(function() {
             if (inputs.length > 0) {
                 let available = parseInt(inputs[0].nextSibling.innerHTML.replace(/[{()}]/g, ''));
                 config.available.push(available);
+            } else {
+                config.available.push(0);
             }
         }
         console.log('Available units', config.available);
@@ -498,6 +505,7 @@ $(document).ready(function() {
 
             if (config.n == 0) {
                 console.log('Not enough units');
+                waitAndReload('Not enough units');
                 return;
             }
 
@@ -639,8 +647,6 @@ $(document).ready(function() {
 
     let timers;
     let timerTimeout = null;
-
-    readTimers();
 
 /*
     addTimer('1', 'url', 5000);

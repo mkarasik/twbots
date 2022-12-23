@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name     Farm Helper
 // @namespace   https://*.tribalwars.net
-// @namespace   https://*.voyna-plemyon.ru
-// @include     *.voyna-plemyon.ru*screen=am_farm*
+// @namespace   https://*.voynaplemyon.com
+// @include     *.voynaplemyon.com*screen=am_farm*
 // @include     *.tribalwars.net*screen=am_farm*
-// @version     4.9
+// @version     5.0
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
