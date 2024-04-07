@@ -1,32 +1,31 @@
 // ==UserScript==
-// @name     Prem Sell Helper
+// @name     Builder Helper
 // @namespace   https://*.tribalwars.net
 // @namespace   https://*.voynaplemyon.com
-// @include     *.voynaplemyon.com*market&mode=exchange*
-// @include     *.tribalwars.net*market&mode=exchange*
-// @version     0.8
+// @include     *.tribalwars.net*screen=main*
+// @version     1.1
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
 
 $(document).ready(function() {
 
-    let scriptInitials = 'PS';
-    let scriptFriendlyName = 'Прем Бот';
-    let scriptTimerColor = '#D876C4';
+    let scriptInitials = 'BB';
+    let scriptFriendlyName = 'Build Bot';
+    let scriptTimerColor = '#FF7F50';
     let config = {};
-
-    const maxRate = 850;
+    let buildings = {};
+    let orders;
 
     readScreenParams();
     readSessionConfig();
     readSessionState();
     createControls();
 
-    // start loot if enabled
-    if (isEnabled()) {
-        start();
-    }
+    // Click ready regardless of script state
+    processFastCompletion();
+
+    // start the rest only after faster completion
 
     function scriptVillageName() {
         return scriptInitials + '.' + config.q.village;
@@ -104,18 +103,19 @@ $(document).ready(function() {
     function createControls() {
         console.log('Creating controls ...');
 
+        // Remove useless td
+        document.getElementById('content_value').getElementsByTagName('table')[0].remove();
+
         let inputs = {};
 
-        let elements = document.querySelectorAll('div.vis');
-        console.log(elements);
+        const element = document.getElementById('contentContainer');
 
-        // create div
         let controlsDiv = document.createElement('div');
         controlsDiv.className = 'vis';
-        elements[0].parentNode.insertBefore(controlsDiv, elements[0].nextSibling);
+        element.before(controlsDiv);
 
         let h = document.createElement('h4');
-        h.innerHTML = 'Прем Бот';
+        h.innerHTML = scriptFriendlyName;
         controlsDiv.appendChild(h);
 
         let innerDiv = document.createElement('div');
@@ -129,48 +129,17 @@ $(document).ready(function() {
         let body = document.createElement('tbody');
         table.appendChild(body);
 
+        // add buttons
+        let btntable = document.createElement('table');
+        btntable.className = 'vis';
+        btntable.width = '100%';
+        table.after(btntable);
+
+        body = document.createElement('tbody');
+        btntable.appendChild(body);
+
         let tr0 = document.createElement('tr');
         body.appendChild(tr0);
-
-        let tr1 = document.createElement('tr');
-        body.appendChild(tr1);
-
-        // columns
-        let columns = [
-            ['', 'Статус']
-        ];
-
-        for (let i = 0; i < columns.length; ++i) {
-            let th = document.createElement('th');
-            th.style = 'text-align:center';
-            th.innerHTML = columns[i][1];
-            tr0.appendChild(th);
-
-            let td = document.createElement('td');
-            td.align = 'center';
-            if (i == 0) {
-                td.innerHTML = 'Неактивно.';
-                td.style = 'width:30%';
-                inputs[columns[i][0]] = td;
-            } else {
-                let input = document.createElement('select');
-                input.innerHTML = columns[i][2];
-                input.name = columns[i][0];
-                td.appendChild(input);
-                inputs[columns[i][0]] = input;
-
-                if (config.session[columns[i][0]]) {
-                    console.log('From session', columns[i][0], config.session[columns[i][0]]);
-                    input.value = config.session[columns[i][0]];
-                } else {
-                    console.log('From defaults', columns[i][0]);
-                    input.value = columns[i][3];
-                }
-            }
-            tr1.appendChild(td);
-        }
-
-        // add buttons
 
         // save
         let tdb = document.createElement('td');
@@ -184,6 +153,7 @@ $(document).ready(function() {
         tdb.appendChild(btn);
 
         tr0.appendChild(tdb);
+
         inputs.save = btn;
 
         // start
@@ -202,12 +172,8 @@ $(document).ready(function() {
         }
         tdb.appendChild(btn);
 
-        tr1.appendChild(tdb);
+        tr0.appendChild(tdb);
         inputs.start = btn;
-
-        console.log('Controls created.', inputs);
-
-        config.inputs = inputs;
 
         // create timers control
         // create div
@@ -223,18 +189,10 @@ $(document).ready(function() {
         controlsDiv.appendChild(innerDiv);
 
         timersDiv.appendChild(createTimersTable());
-
+        console.log('Controls created.', inputs);
     }
 
     function saveSelection() {
-        for (let control in config.inputs) {
-            let name = config.inputs[control].name;
-            let value = config.inputs[control].value;
-
-            if (name) {
-                config.session[name] = value;
-            }
-        }
         saveSessionConfig();
 
         // add vilalge to timers list with no delay
@@ -242,23 +200,11 @@ $(document).ready(function() {
     }
 
     function pageUrl() {
-        let url = 'https://' + window.location.hostname + '/game.php?' + ((config.q.t) ? 't=' + config.q.t + '&': '') + 'village=' + config.q.village + '&screen=market&mode=exchange';
+        let url = 'https://' + window.location.hostname + '/game.php?' + ((config.q.t) ? 't=' + config.q.t + '&': '') + 'village=' + config.q.village + '&screen=main';
         return url;
     }
 
     function disablecontrols() {
-        // remove divs
-        let elements = document.querySelectorAll('div.vis');
-        elements[0].remove();
-
-        // disable controls
-        for (let control in config.inputs) {
-            if (control != 'start') {
-                config.inputs[control].readOnly = true;
-                config.inputs[control].disabled = true;
-            }
-        }
-        document.getElementsByClassName('btn-premium-exchange-buy')[0].style.display = 'none';
     }
 
     function start() {
@@ -292,7 +238,7 @@ $(document).ready(function() {
         let rand = Math.floor(Math.random() * (max - min + 1) + min);
         console.log('Waiting for ' + rand + ' milliseconds ...');
         window.setTimeout(function() {
-            processSale();
+            processBuild();
         }, rand);
 
         var date = new Date(Date.now() + rand);
@@ -305,6 +251,12 @@ $(document).ready(function() {
 
         let time = Math.floor(Math.random() * (max - min + 1) + min);
 
+
+        let left = calculateDateTimeOffsets();
+
+        if (left > 0 && left < time) {
+            time = left;
+        }
         let url = pageUrl();
 
         // add to timers list
@@ -313,84 +265,357 @@ $(document).ready(function() {
         loadFirstTimer();
     }
 
-    function processSale() {
+    function calculateDateTimeOffsets() {
+        let date = document.getElementById('serverDate').innerHTML.split('/');
+        let time = document.getElementById('serverTime').innerHTML.split(':');
+
+        const server = new Date();
+        server.setHours(parseInt(time[0]));
+        server.setMinutes(parseInt(time[1]));
+        server.setSeconds(parseInt(time[2]));
+
+        const next = new Date();
+        const lines = document.getElementsByClassName('lit-item');
+        let left = -1;
+        if (lines.length > 3) {
+            let data = lines[3].firstChild.data;
+            data = data.substring(data.lastIndexOf(' ') + 1);
+            time = data.split(':');
+            next.setHours(parseInt(time[0]));
+            next.setMinutes(parseInt(time[1]));
+            next.setSeconds(parseInt(time[2]));
+            left = next.getTime() - server.getTime();
+            if (left > 3 * 60000) {
+                left = left - 3 * 60000 + 2000;
+            }
+        }
+        return left;
+    }
+
+    function processBuild() {
         console.log('Processing ...');
 
-        // prices
-        let prices = [];
-        prices.push(parseInt(document.getElementById('premium_exchange_rate_wood').innerText.split(' ')[1]));
-        prices.push(parseInt(document.getElementById('premium_exchange_rate_stone').innerText.split(' ')[1]));
-        prices.push(parseInt(document.getElementById('premium_exchange_rate_iron').innerText.split(' ')[1]));
-        console.log(prices);
+        // find current queue length
+        var queue = document.querySelectorAll('[class*="buildorder_"]');
+        console.log('Queue length', queue.length);
 
-        for (let i = 0; i < 3; i++) {
-            if (prices[i] >= maxRate) {
-                prices[i] = 100000;
+        let value = sessionStorage.getItem('OrdersQueue');
+
+        if (value) {
+            orders = JSON.parse(value);
+        } else {
+            orders = [];
+        }
+
+        let current = -1;
+
+        for (let i = 0; i < orders.length; ++i) {
+            const order = orders[i];
+            console.log('Trying', order.name, order.level);
+            const node = readBuilding(order.name);
+            if (node) {
+                if (readLevel(node, order.name) < order.level) {
+                    current = i;
+                    break;
+                }
             }
         }
 
-        // find current resources amount
-        let capacity = parseInt(document.getElementById('market_merchant_available_count').innerHTML) * 1000;
+        if (current > 0) {
+            orders.splice(0, current);
+            saveOrders();
+        }
 
-        if (capacity <= 1000 ) {
-            // wait 20 - 30 min
-            waitAndReload('No merchants left', 30 * 60000, 45 * 60000);
+        if (orders.length == 0) {
+            // no more build orders, proceed with other bots
+            loadFirstTimer();
             return;
         }
 
-        if (capacity > 10000) {
-            capacity = 10000;
+        console.log('Current order', orders[0]);
+
+        // If queue is too long
+        if (queue.length > 4) {
+            // wait to complete
+            waitAndReload('Queue too long', 14 * 60000, 19 * 60000);
         } else {
-            capacity -= 1000;
-        }
+            let btn;
 
-        let resources = [];
-        resources.push(Math.min(capacity, parseInt(document.getElementById('wood').innerHTML)));
-        resources.push(Math.min(capacity, parseInt(document.getElementById('stone').innerHTML)));
-        resources.push(Math.min(capacity, parseInt(document.getElementById('iron').innerHTML)));
+            let node = readBuilding(orders[0].name);
 
-        // calculate bigger gain
-        let max = 0;
-        let resource = -1;
-        for (let i = 0; i < 3; i++) {
-            let gain = parseInt(resources[i] / prices[i]);
-            console.log('gain', resources[i], prices[i], gain)
-            if (gain > max) {
-                max = gain;
-                resource = i;
+            const options = node.getElementsByClassName('build_options');
+
+            if (options && options.length > 0) {
+                // check if farm needed
+                let inactive = options[0].getElementsByClassName('inactive center');
+                if (inactive && inactive.length > 0) {
+                    if (inactive[0].innerHTML.includes('Farm') && !isOrdered('farm')) {
+                        node = readBuilding('farm');
+                        orders.unshift({'name': 'farm', 'level': readLevel(node, 'farm') + 1});
+                        saveOrders();
+                        location.reload();
+                    }
+                }
+                inactive = options[0].getElementsByClassName('inactive');
+                if (inactive && inactive.length > 0) {
+                    if (inactive[0].innerHTML.includes('Warehouse') && !isOrdered('storage')) {
+                        node = readBuilding('storage');
+                        orders.unshift({'name': 'storage', 'level': readLevel(node, 'storage') + 1});
+                        saveOrders();
+                        location.reload();
+                    }
+                }
+                const btns = options[0].getElementsByClassName('btn-build');
+                if (btns && btns.length > 0) {
+                    btn = btns[0];
+                }
+            }
+
+            if (btn && btn.checkVisibility()) {
+                btn.click();
+                window.setTimeout(function() {
+                    location.reload();
+                }, 4000);
+            } else {
+                waitAndReload('Waiting for ' + orders[0].name, 14 * 60000, 19 * 60000);
             }
         }
-        console.log('max', max, resource);
+    }
 
-        if (resource == -1 || max < 2) {
-            waitAndReload('Nothing to sell', 30 * 60000, 45 * 60000);
+    function readBuildings() {
+        let names = [
+            'main',
+            'barracks',
+            'place',
+            'statue',
+            'market',
+            'wood',
+            'stone',
+            'iron',
+            'farm',
+            'storage',
+            'hide',
+            'stable',
+            'garage',
+            'academy',
+            'smith',
+            'wall'
+        ];
+        for (const name of names) {
+            const building = readBuilding(name);
+            if (building) {
+              const level = readLevel(building, name);
+              buildings[name] = { 'node' : building, 'level': level, 'added': level };
+            }
+        }
+        console.log(buildings);
+    }
+
+    function createQueueControls() {
+        // Read queue
+        let value = sessionStorage.getItem('OrdersQueue');
+
+        if (value) {
+            orders = JSON.parse(value);
         } else {
-            let resNames = ['wood', 'clay', 'iron'];
-            setStatus('Selling ' + resNames[resource] + '...');
+            orders = [];
+        }
 
-            let inputNames = ['sell_wood', 'sell_stone', 'sell_iron'];
-            document.getElementsByName(inputNames[resource])[0].value = ((resources[resource] - prices[resource]) / 100).toFixed() * 100;
+        // Create UI
+        let table = document.createElement('table');
+        table.className = 'vis';
+        table.width = '100%';
+        table.id = 'bot_orders_table';
 
-            let calculate = document.getElementsByClassName('btn-premium-exchange-buy')[0];
-            let rand = Math.floor(Math.random() * (7000 - 4000 + 1) + 4000);
+        const element = document.getElementById('contentContainer');
 
-            window.setTimeout(function() {
-                calculate.click();
+        let controlsDiv = document.createElement('div');
+        controlsDiv.className = 'vis';
+        element.after(controlsDiv);
+
+        controlsDiv.appendChild(table);
+
+        // Create Controls
+        let main = readBuilding('main');
+        let firstTh = main.parentNode.firstChild.getElementsByTagName('th')[0];
+        let th = document.createElement('th');
+        th.innerHTML = 'Add';
+        firstTh.after(th);
+
+        for (let building in buildings) {
+            let td = document.createElement('td');
+            const tds = buildings[building].node.getElementsByTagName('td');
+            if (tds.length > 2) {
+                buildings[building].td = td;
+                td.innerHTML = (buildings[building].added + 1) + ' <a class="" href="#"><img src="https://dsen.innogamescdn.com/asset/72737c96/graphic/premium_plus.png" title="" alt="" class=""></a>'
+            }
+            td.addEventListener('click', function() {addOrder(building, buildings[building])}, false);
+            tds[0].after(td);
+        }
+
+        // add orders
+        createOrdersUi();
+    }
+
+    function createOrdersUi() {
+        console.log('Creating orders UI ...');
+
+        // find table by id
+        let table = document.getElementById('bot_orders_table');
+
+        // delete children
+        while (table.firstChild) {
+            table.removeChild(table.lastChild);
+        }
+
+        let body = document.createElement('tbody');
+        table.appendChild(body);
+
+        let tr0 = document.createElement('tr');
+        body.appendChild(tr0);
+
+        let headers = ['Building', 'Level'];
+
+        for (let i = 0; i < headers.length; ++i) {
+            let th = document.createElement('th');
+            th.style = 'text-align:center';
+            th.innerHTML = headers[i];
+            tr0.appendChild(th);
+        }
+
+        let th = document.createElement('th');
+        th.innerHTML = '<img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/delete_small.png" title="" alt="" class="">';
+        tr0.appendChild(th);
+
+        // reset levels
+        Object.keys(buildings).forEach(function(key) {
+            var building = buildings[key];
+            building.added = building.level;
+        });
+
+        // add nodes
+        for (let i = 0; i < orders.length; ++i) {
+            let tr = document.createElement('tr');
+            body.appendChild(tr);
+
+            let order = orders[i];
+            let td = document.createElement('td');
+            td.innerHTML = order.name;
+            tr.appendChild(td);
+
+            td = document.createElement('td');
+            td.innerHTML = order.level;
+            tr.appendChild(td);
+
+            td = document.createElement('td');
+            td.innerHTML = '<a class="" href="#"><img src="https://dsru.innogamescdn.com/asset/34f6b4c7/graphic/delete_small.png" title="" alt="" class=""></a>';
+            tr.appendChild(td);
+            td.addEventListener('click', function() {removeOrder(i)}, false);
+
+            let building = buildings[order.name];
+            if (building) {
+                if (building.added < order.level) {
+                    building.added = order.level;
+                }
+            }
+        }
+        // update controls
+        Object.keys(buildings).forEach(function(key) {
+            var building = buildings[key];
+            if (building.td) {
+                building.td.innerHTML = (building.added + 1) + ' <a class="" href="#"><img src="https://dsen.innogamescdn.com/asset/72737c96/graphic/premium_plus.png" title="" alt="" class=""></a>'
+            }
+        });
+    }
+
+    function addOrder(name, building) {
+        orders.push({'name': name, 'level': building.added + 1});
+        saveOrders();
+        createOrdersUi(); // will update added
+    }
+
+    function removeOrder(index) {
+        const order = orders[index];
+        orders.splice(index, 1);
+        saveOrders();
+        createOrdersUi();
+    }
+
+    function saveOrders(index) {
+        sessionStorage.setItem('OrdersQueue', JSON.stringify(orders));
+    }
+    function readBuilding(name) {
+        const building = document.getElementById('main_buildrow_' + name);
+        if (building) {
+            //console.log('Building', name, 'found', building);
+            return building;
+        } else {
+            //console.log('Building', name, 'not found');
+        }
+    }
+
+    function isOrdered(name) {
+        const orders = document.getElementsByClassName('buildorder_' + name);
+        return orders && orders.length > 0;
+    }
+
+    function readLevel(building, name) {
+        // check if already building
+        const orders = document.getElementsByClassName('buildorder_' + name);
+        const match = building.children[0].getElementsByTagName('span')[0].firstChild.nodeValue.match(/Level (.*)/);
+        let level = 0;
+        if (match) {
+            level = parseInt(match[1]);
+            if (orders) {
+                level += orders.length;
+            }
+        }
+        return level;
+    }
+
+    function processFastCompletion() {
+        // Find construction queue first record
+        // find if ready to complete
+
+        console.log('Processing fast completion...');
+        let processed = false;
+
+        let elements = document.getElementsByClassName('btn-instant-free');
+        if (elements && elements.length > 0) {
+            if (elements[0].style.display == 'none') {
+                console.log('Not ready yet');
+                processed = true;
+            } else {
+                //complition
+                console.log('Instant complete');
+                let rand = Math.floor(Math.random() * (7000 - 4000 + 1) + 4000);
 
                 window.setTimeout(function() {
-                    let confirm = document.getElementsByClassName('btn-confirm-yes')[0];
-                    confirm.click();
-                    // stays on the same page, try more in 15 - 20 seconds
+                    console.log('clicking');
+                    elements[0].click();
                     window.setTimeout(function() {
-                        waitAndReload('Trying more', 15000, 20000);
-                    }, rand);
+                        processFastCompletion();
+                    }, 4000);
                 }, rand);
-            }, rand);
+            }
+        } else {
+            console.log('Not found');
+            processed = true;
+        }
+
+        if (processed) {
+            console.log('Fast completion processed');
+            if (isEnabled())
+            {
+                start();
+            }
+            readBuildings();
+            createQueueControls();
         }
     }
 
     function setStatus(status) {
-        config.inputs[''].innerHTML = status;
+       // config.inputs[''].innerHTML = status;
     }
 
     function readScreenParams() {
@@ -439,15 +664,14 @@ $(document).ready(function() {
     function readTimers() {
         console.log('Reading timers ...');
         let value = sessionStorage.getItem('BotTimers');
+
         if (value) {
             timers = JSON.parse(value);
         } else {
             timers = [];
         }
-
         // timers are stored ordered
         createTimersUi();
-
         console.log('Timers read', JSON.stringify(timers));
     }
 

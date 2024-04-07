@@ -4,7 +4,7 @@
 // @namespace   https://*.voynaplemyon.com
 // @include     *.voynaplemyon.com*screen=am_farm*
 // @include     *.tribalwars.net*screen=am_farm*
-// @version     5.0
+// @version     5.2
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -278,7 +278,7 @@ $(document).ready(function() {
 
         readIndex();
 
-        config.currentTemplate = config[config.session.template]; 
+        config.currentTemplate = config[config.session.template];
         config.wait = 25;
         config.distance = parseInt(config.session.distance);
 
@@ -380,7 +380,7 @@ $(document).ready(function() {
             resetIndex();
             waitAndReload('Радиус ' + config.distance + ' завершен.', 0);
         } else {
-            setStatus('Репорт: ' + config.currentIndex + '/' + config.reports.length + ' ...');
+            setStatus('Репорт: ' + config.currentIndex + '/' + config.reports.length + (config.reports[config.currentIndex].full ? ' * ':'') + ' ...');
 
             // sending POST
             let data = 'target=' + config.reports[config.currentIndex].target + '&template_id=' + config.currentTemplate.template_id + '&source=' + config.q.village + '&h=' + config.q.h;
@@ -408,7 +408,12 @@ $(document).ready(function() {
                             disableSession();
                             window.location.reload();
                         } else if (resp.response && resp.response.success) {
-                            config.currentIndex++;
+                            // if full send one more
+                            if (config.reports[config.currentIndex].full) {
+                                config.reports[config.currentIndex].full = false;
+                            } else {
+                                config.currentIndex++;
+                            }
                             startReportProcess(false);
                         } else if (resp.error && resp.error.length > 0) {
                             saveIndex();
@@ -442,6 +447,9 @@ $(document).ready(function() {
 
                 // get distance
                 report.distance = parseInt(elements[i].childNodes[15].innerHTML.split('.')[0]);
+
+                // haull
+                report.full = elements[i].innerHTML.includes('Full haul');
                 reports.push(report);
             }
         }
@@ -455,7 +463,12 @@ $(document).ready(function() {
 
         // find sit id and h code
         let elements = document.getElementsByClassName('footer-link');
-        config.q = readQuerryParams(String(elements[elements.length - 2]));
+        for (let i = elements.length - 1; i >= 0; i--) {
+            config.q = readQuerryParams(String(elements[i]));
+            if (config.q.village) {
+                break;
+            }
+        }
 
          // Read templates
         config.a = readTemplate(document.getElementsByClassName('farm_icon_a'));

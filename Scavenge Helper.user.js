@@ -4,7 +4,7 @@
 // @namespace   https://*.voynaplemyon.com
 // @include     *.voynaplemyon.com*mode=scavenge*
 // @include     *.tribalwars.net*mode=scavenge*
-// @version     2.6
+// @version     2.7
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -541,13 +541,16 @@ $(document).ready(function() {
                             console.log(response);
 
                             if (response.status == 200) {
-                                let resp = JSON.parse(response.response);
-                                console.log(resp);
+                                try {
+                                    let resp = JSON.parse(response.response);
+                                    console.log(resp);
 
-                                if (resp.bot_protect) {
-                                    disableSession();
-                                    // force reload now
-                                    count = 10;
+                                    if (resp.bot_protect) {
+                                        disableSession();
+                                        // force reload now
+                                        count = 10;
+                                    }
+                                } catch (e) {
                                 }
                             } else {
                                 console.log(response);
@@ -591,7 +594,12 @@ $(document).ready(function() {
 
         // find sit id and h code
         let elements = document.getElementsByClassName('footer-link');
-        config.q = readQuerryParams(String(elements[elements.length - 2]));
+        for (let i = elements.length - 1; i >= 0; i--) {
+            config.q = readQuerryParams(String(elements[i]));
+            if (config.q.village) {
+                break;
+            }
+        }
 
          // find all busy groups
         elements = document.getElementsByClassName('return-countdown');

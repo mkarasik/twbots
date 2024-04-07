@@ -4,7 +4,7 @@
 // @namespace   https://*.voynaplemyon.com
 // @include     *.voynaplemyon.com*screen=place&try=confirm*
 // @include     *.tribalwars.net*screen=place&try=confirm*
-// @version     1.5
+// @version     1.6
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js
 // @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js
 // @resource    jqUI_CSS  http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/base/jquery-ui.css
@@ -553,7 +553,12 @@ function readScreenParams() {
 
     // find sit id and h code
     let elements = document.getElementsByClassName('footer-link');
-    config.q = readQuerryParams(String(elements[elements.length - 2]));
+    for (let i = elements.length - 1; i >= 0; i--) {
+        config.q = readQuerryParams(String(elements[i]));
+        if (config.q.village) {
+            break;
+        }
+    }
 
     console.log('Params reading done.', config);
 }
