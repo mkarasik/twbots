@@ -4,7 +4,7 @@
 // @namespace   https://*.voynaplemyon.com
 // @include     *.voynaplemyon.com*mode=scavenge*
 // @include     *.tribalwars.net*mode=scavenge*
-// @version     2.7
+// @version     2.8
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -405,6 +405,9 @@ $(document).ready(function() {
     }
 
     function recalcualteUnits() {
+       // if (config.n > 2)
+       //     config.n = 2;
+
         do {
             readUnits();
             calculateGroups();
@@ -477,13 +480,18 @@ $(document).ready(function() {
         }
 
         // knight
-        if (document.getElementsByName('archer').length > 0) {
+        if (document.getElementsByName('knight').length > 0) {
             request += candidatePrefix + 'knight%5D=0';
         }
         // add sum
         request += '&squad_requests%5B' + 0 + '%5D%5Bcandidate_squad%5D%5Bcarry_max%5D=' + sum;
         request += '&squad_requests%5B' + 0 + '%5D%5Boption_id%5D=' + (num + 1);
         request += '&squad_requests%5B' + 0 + '%5D%5Buse_premium%5D=false';
+
+        // add h
+        if (config.q.h) {
+            request += config.q.h;
+        }
 
         return request;
     }
