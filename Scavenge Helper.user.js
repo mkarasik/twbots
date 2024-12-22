@@ -4,7 +4,7 @@
 // @namespace   https://*.voynaplemyon.com
 // @include     *.voynaplemyon.com*mode=scavenge*
 // @include     *.tribalwars.net*mode=scavenge*
-// @version     2.8
+// @version     2.9
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 $(document).ready(function() {
@@ -174,12 +174,19 @@ $(document).ready(function() {
             let td = document.createElement('td');
             if (i != 7) {
                 let select = document.createElement('select');
-                select.innerHTML = '<option value="manual">---</option><option value="all">Все</option><option value="-100">-100</option><option value="-200">-200</option>';
+                select.innerHTML = `
+                  <option value="manual">---</option>
+                  <option value="all">Все</option>
+                  <option value="-100">-100</option>
+                  <option value="-200">-200</option>
+                  <option value="20">20%</option>
+                  <option value="40">40%</option>
+                  <option value="60">60%</option>
+                  <option value="80">80%</option>
+                `;
 
                 if (config.select && (select.innerHTML.indexOf('value="' + config.select[i] + '"') > -1)) {
                     select.value = config.select[i];
-                } else if (config.select && (typeof config.select[i] === 'number')) {
-                    select.value = 'manual';
                 } else {
                     // set spears, swords, and axes
                     if (i < 2) {
@@ -298,6 +305,14 @@ $(document).ready(function() {
                 unit.num = Math.max(0, config.available[i] - 100);
             } else if (selValue === '-200') {
                 unit.num = Math.max(0, config.available[i] - 200);
+            } else if (selValue === '20') {
+                unit.num = Math.floor(config.available[i] * 0.2);
+            } else if (selValue === '40') {
+                unit.num = Math.floor(config.available[i] * 0.4);
+            } else if (selValue === '60') {
+                unit.num = Math.floor(config.available[i] * 0.6);
+            } else if (selValue === '80') {
+                unit.num = Math.floor(config.available[i] * 0.8);
             } else {
                 if (inputs.length > 0 && inputs[0].value.length > 0) {
                     unit.num = parseInt(inputs[0].value);
